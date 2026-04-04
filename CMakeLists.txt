@@ -16,3 +16,13 @@ add_executable(build_geometry
 
 target_include_directories(build_geometry PRIVATE include)
 target_link_libraries(build_geometry PRIVATE yaml-cpp ${GMSH_LIB})
+add_executable(solve_acoustics
+        apps/solve_acoustics.cpp
+        src/io/yaml_reader.cpp
+        src/acoustics/acoustics_problem.cpp
+        src/acoustics/boundary_conditions.cpp
+        src/acoustics/helmholtz_solver.cpp
+)
+
+target_include_directories(solve_acoustics PRIVATE include)
+target_link_libraries(solve_acoustics PRIVATE yaml-cpp ${GMSH_LIB})

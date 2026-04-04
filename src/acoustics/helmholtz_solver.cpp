@@ -1,8 +1,10 @@
 #include "acoustics/helmholtz_solver.hpp"
 
-
 #include <cmath>
 #include <stdexcept>
+#include <unordered_map>
+
+#include <gmsh.h>
 
 HelmholtzSolver::HelmholtzSolver(
     const AcousticsProblem& problem,
@@ -22,6 +24,138 @@ void HelmholtzSolver::LoadMesh(const std::string& mesh_path) {
   RightHandSide.clear();
   ClearSolution();
 
+  try {
+    gmsh::initialize();
+    gmsh::open(mesh_path);
+
+    std::unordered_map<std::size_t, int> node_tag_to_index;
+
+    auto ensure_node = [&](const std::size_t node_tag) -> int {
+      const auto it = node_tag_to_index.find(node_tag);
+      if (it != node_tag_to_index.end()) {
+        return it->second;
+      }
+
+      std::vector<double> coords;
+      std::vector<double> parametric_coords;
+      int dim = -1;
+      int tag = -1;
+
+      gmsh::model::mesh::getNode(
+          node_tag, coords, parametric_coords, dim, tag);
+
+      if (coords.size() < 2) {
+        throw std::runtime_error("Gmsh node has invalid coordinate dimension");
+      }
+
+      MeshNode node;
+      node.R = coords[0];
+      node.Z = coords[1];
+
+      const int new_index = static_cast<int>(Nodes.size());
+      Nodes.push_back(node);
+      node_tag_to_index[node_tag] = new_index;
+
+      return new_index;
+    };
+
+    std::vector<int> fluid_entities;
+    gmsh::model::getEntitiesForPhysicalGroup(
+        2, static_cast<int>(SurfaceTag::cFluid), fluid_entities);
+
+    if (fluid_entities.empty()) {
+      throw std::runtime_error("No fluid physical entities found in mesh");
+    }
+
+    for (const int entity_tag : fluid_entities) {
+      std::vector<int> element_types;
+      std::vector<std::vector<std::size_t>> element_tags;
+      std::vector<std::vector<std::size_t>> element_node_tags;
+
+      gmsh::model::mesh::getElements(
+          element_types, element_tags, element_node_tags, 2, entity_tag);
+
+      for (std::size_t block = 0; block < element_types.size(); ++block) {
+        const int element_type = element_types[block];
+
+        if (element_type != 2) {
+          throw std::runtime_error(
+              "Only 3-node triangle elements are supported in fluid region");
+        }
+
+        const std::vector<std::size_t>& connectivity = element_node_tags[block];
+
+        if (connectivity.size() % 3 != 0) {
+          throw std::runtime_error(
+              "Triangle connectivity is not divisible by 3");
+        }
+
+        for (std::size_t i = 0; i < connectivity.size(); i += 3) {
+          TriangleElement element;
+          element.Node0 = ensure_node(connectivity[i + 0]);
+          element.Node1 = ensure_node(connectivity[i + 1]);
+          element.Node2 = ensure_node(connectivity[i + 2]);
+          element.PhysicalTag = static_cast<int>(SurfaceTag::cFluid);
+
+          Elements.push_back(element);
+        }
+      }
+    }
+
+    auto load_boundary_group = [&](const int physical_tag) {
+      std::vector<int> entities;
+      gmsh::model::getEntitiesForPhysicalGroup(1, physical_tag, entities);
+
+      for (const int entity_tag : entities) {
+        std::vector<int> element_types;
+        std::vector<std::vector<std::size_t>> element_tags;
+        std::vector<std::vector<std::size_t>> element_node_tags;
+
+        gmsh::model::mesh::getElements(
+            element_types, element_tags, element_node_tags, 1, entity_tag);
+
+        for (std::size_t block = 0; block < element_types.size(); ++block) {
+          const int element_type = element_types[block];
+
+          if (element_type != 1) {
+            throw std::runtime_error(
+                "Only 2-node line elements are supported on boundaries");
+          }
+
+          const std::vector<std::size_t>& connectivity =
+              element_node_tags[block];
+
+          if (connectivity.size() % 2 != 0) {
+            throw std::runtime_error(
+                "Boundary connectivity is not divisible by 2");
+          }
+
+          for (std::size_t i = 0; i < connectivity.size(); i += 2) {
+            BoundaryEdge edge;
+            edge.Node0 = ensure_node(connectivity[i + 0]);
+            edge.Node1 = ensure_node(connectivity[i + 1]);
+            edge.PhysicalTag = physical_tag;
+
+            BoundaryEdges.push_back(edge);
+          }
+        }
+      }
+    };
+
+    load_boundary_group(static_cast<int>(BoundaryTag::cWall));
+    load_boundary_group(static_cast<int>(BoundaryTag::cReflector));
+    load_boundary_group(static_cast<int>(BoundaryTag::cSource));
+    load_boundary_group(static_cast<int>(BoundaryTag::cAxis));
+
+    gmsh::finalize();
+  } catch (...) {
+    try {
+      gmsh::finalize();
+    } catch (...) {
+    }
+    throw;
+  }
+
   MeshLoaded = true;
   Assembled = false;
   Solved = false;
@@ -37,30 +171,32 @@ void HelmholtzSolver::Assemble() {
   ClearSolution();
 
   for (const TriangleElement& element : Elements) {
-      if (!IsFluidElement(element)) {
-          continue;
-      }
+    if (!IsFluidElement(element)) {
+      continue;
+    }
 
-      const TriangleGeometry& geometry = BuildTriangleGeometry(element);
-      const std::vector<Gradient2D> gradients = ComputeLinearShapeGradients(geometry);
-      const LocalElementMatrix local_matrix = ComputeLocalHelmholtzMatrix(geometry, gradients);
+    const TriangleGeometry geometry = BuildTriangleGeometry(element);
+    const std::vector<Gradient2D> gradients =
+        ComputeLinearShapeGradients(geometry);
+    const LocalElementMatrix local_matrix =
+        ComputeLocalHelmholtzMatrix(geometry, gradients);
 
-      AddLocalElementMatrixToGlobalSystem(element, local_matrix);
+    AddLocalElementMatrixToGlobalSystem(element, local_matrix);
   }
 
   for (const BoundaryEdge& edge : BoundaryEdges) {
-      if (!Conditions.IsSource(edge.PhysicalTag)) {
-          continue;
-      }
+    if (!Conditions.IsSource(edge.PhysicalTag)) {
+      continue;
+    }
 
-      const LocalEdgeVector local_vector = ComputeLocalSourceEdgeVector(edge);
-
-      AddLocalEdgeVectorToGlobalRightHandSide(edge, local_vector);
-
-      }
+    const LocalEdgeVector local_vector = ComputeLocalSourceEdgeVector(edge);
+    AddLocalEdgeVectorToGlobalRightHandSide(edge, local_vector);
+  }
 
   Assembled = true;
   Solved = false;
+
+  ValidateAssembledSystem();
 }
 
 void HelmholtzSolver::Solve() {
@@ -271,8 +407,7 @@ LocalElementMatrix HelmholtzSolver::ComputeLocalHelmholtzMatrix(
     const std::vector<Gradient2D>& gradients) const {
   const LocalElementMatrix stiffness =
       ComputeLocalStiffnessMatrix(geometry, gradients);
-  const LocalElementMatrix mass =
-      ComputeLocalMassMatrix(geometry);
+  const LocalElementMatrix mass = ComputeLocalMassMatrix(geometry);
 
   LocalElementMatrix matrix;
 
@@ -289,84 +424,125 @@ LocalElementMatrix HelmholtzSolver::ComputeLocalHelmholtzMatrix(
   return matrix;
 }
 
-double HelmholtzSolver::ComputeBoundaryEdgeLength(const BoundaryEdge& edge) const {
-    const MeshNode& node0 = Nodes.at(static_cast<std::size_t>(edge.Node0));
-    const MeshNode& node1 = Nodes.at(static_cast<std::size_t>(edge.Node1));
+double HelmholtzSolver::ComputeBoundaryEdgeLength(
+    const BoundaryEdge& edge) const {
+  const MeshNode& node0 = Nodes.at(static_cast<std::size_t>(edge.Node0));
+  const MeshNode& node1 = Nodes.at(static_cast<std::size_t>(edge.Node1));
 
-    const double dr = node1.R - node0.R;
-    const double dz = node1.Z - node0.Z;
+  const double dr = node1.R - node0.R;
+  const double dz = node1.Z - node0.Z;
 
-    return std::sqrt(dr * dr + dz * dz);
+  return std::sqrt(dr * dr + dz * dz);
 }
 
-double HelmholtzSolver::ComputeBoundaryEdgeCentroidR(const BoundaryEdge& edge) const {
-    const MeshNode& node0 = Nodes.at(static_cast<std::size_t>(edge.Node0));
-    const MeshNode& node1 = Nodes.at(static_cast<std::size_t>(edge.Node1));
+double HelmholtzSolver::ComputeBoundaryEdgeCentroidR(
+    const BoundaryEdge& edge) const {
+  const MeshNode& node0 = Nodes.at(static_cast<std::size_t>(edge.Node0));
+  const MeshNode& node1 = Nodes.at(static_cast<std::size_t>(edge.Node1));
 
-    return (node0.R + node1.R) / 2.0;
+  return (node0.R + node1.R) / 2.0;
 }
 
-LocalEdgeVector HelmholtzSolver::ComputeLocalSourceEdgeVector(const BoundaryEdge& edge) const {
-    const double edge_length = ComputeBoundaryEdgeLength(edge);
+LocalEdgeVector HelmholtzSolver::ComputeLocalSourceEdgeVector(
+    const BoundaryEdge& edge) const {
+  const double edge_length = ComputeBoundaryEdgeLength(edge);
 
-    if (edge_length <= 0.0) {
-        throw std::runtime_error("Boundary edge length has non-positive length");
+  if (edge_length <= 0.0) {
+    throw std::runtime_error("Boundary edge has non-positive length");
+  }
+
+  const double centroid_r = ComputeBoundaryEdgeCentroidR(edge);
+  const std::complex<double> scale =
+      Problem.SourceFlux * centroid_r * edge_length * 0.5;
+
+  LocalEdgeVector vector;
+  vector.Values[0] = scale;
+  vector.Values[1] = scale;
+
+  return vector;
+}
+
+bool HelmholtzSolver::IsFluidElement(const TriangleElement& element) const {
+  return element.PhysicalTag == static_cast<int>(SurfaceTag::cFluid);
+}
+
+void HelmholtzSolver::AddLocalElementMatrixToGlobalSystem(
+    const TriangleElement& element,
+    const LocalElementMatrix& local_matrix) {
+  const int global_indices[3] = {
+      element.Node0,
+      element.Node1,
+      element.Node2};
+
+  for (int row = 0; row < 3; ++row) {
+    for (int col = 0; col < 3; ++col) {
+      Matrix[static_cast<std::size_t>(global_indices[row])]
+            [static_cast<std::size_t>(global_indices[col])] +=
+          local_matrix.Values[row][col];
     }
-
-    const double centroid_r = ComputeBoundaryEdgeCentroidR(edge);
-    const std::complex<double> scale = Problem.SourceFlux * centroid_r * edge_length * 0.5;
-
-    LocalEdgeVector vector;
-    vector.Values[0] = scale;
-    vector.Values[1] = scale;
-
-    return vector;
+  }
 }
 
-bool HelmholtzSolver::IsFluidElement(const TriangleElement& element) const{
-    return element.PhysicalTag == static_cast<int>(SurfaceTag::cFluid);
-}
+void HelmholtzSolver::AddLocalEdgeVectorToGlobalRightHandSide(
+    const BoundaryEdge& edge,
+    const LocalEdgeVector& local_vector) {
+  const int global_indices[2] = {
+      edge.Node0,
+      edge.Node1};
 
-void HelmholtzSolver::AddLocalElementMatrixToGlobalSystem(const TriangleElement& element, const LocalElementMatrix& local_matrix){
-    const int global_indices[3] = {element.Node0, element.Node1, element.Node2};
-
-    for (int row = 0; row < 3; ++row) {
-        for (int col = 0; col < 3; ++col) {
-            Matrix[static_cast<std::size_t>(global_indices[row])][static_cast<std::size_t>(col)] += local_matrix.Values[row][col];
-        }
-    }
-}
-
-void HelmholtzSolver::AddLocalEdgeVectorToGlobalRightHandSide(const BoundaryEdge& edge, const LocalEdgeVector& local_vector) {
-    const int global_indices[2] = {edge.Node0, edge.Node1};
-
-    for (int row = 0; row < 2; ++row) {
-        RightHandSide[static_cast<std::size_t>(global_indices[row])] +=
-            local_vector.Values[row];
-    }
+  for (int row = 0; row < 2; ++row) {
+    RightHandSide[static_cast<std::size_t>(global_indices[row])] +=
+        local_vector.Values[row];
+  }
 }
 
 void HelmholtzSolver::ValidateAssembledSystem() const {
-    const std::size_t dof_count = GetNumberOfDofs();
+  const std::size_t dof_count = GetNumberOfDofs();
 
-    if (Matrix.size() != dof_count) {
-        throw std::runtime_error("Matrix size does not match number of DOFs");
-    }
+  if (Matrix.size() != dof_count) {
+    throw std::runtime_error("Matrix size does not match number of DOFs");
+  }
+  if (RightHandSide.size() != dof_count) {
+    throw std::runtime_error(
+        "Right-hand side size does not match number of DOFs");
+  }
 
-    if (RightHandSide.size() != dof_count) {
-        throw std::runtime_error("RightHandSide size does not match number of DOFs");
+  bool matrix_nonzero = false;
+  for (std::size_t i = 0; i < dof_count; ++i) {
+    for (std::size_t j = 0; j < dof_count; ++j) {
+      if (std::abs(Matrix[i][j]) > 1e-14) {
+        matrix_nonzero = true;
+        break;
+      }
     }
+    if (matrix_nonzero) {
+      break;
+    }
+  }
+  if (!matrix_nonzero) {
+    throw std::runtime_error("Global matrix is zero after assembly");
+  }
 
-    bool matrix_nonzero = false;
-    for (std::size_t row = 0; row < 3; ++row) {
-        for (std::size_t col = 0; col < 3; ++col) {
-            if (std::abs(Matrix[row][col]) > 1e-14) {
-                matrix_nonzero = true;
-                break;
-            }
-        }
-        if (matrix_nonzero) {
-            break;
-        }
+  bool rhs_nonzero = false;
+  for (std::size_t i = 0; i < dof_count; ++i) {
+    if (std::abs(RightHandSide[i]) > 1e-14) {
+      rhs_nonzero = true;
+      break;
     }
+  }
+
+  bool has_source_edge = false;
+  for (const BoundaryEdge& edge : BoundaryEdges) {
+    if (Conditions.IsSource(edge.PhysicalTag)) {
+      has_source_edge = true;
+      break;
+    }
+  }
+
+  if (has_source_edge && !rhs_nonzero) {
+    throw std::runtime_error("RHS is zero but source edges are present");
+  }
+  if (!has_source_edge && rhs_nonzero) {
+    throw std::runtime_error("RHS is non-zero but no source edges are present");
+  }
 }

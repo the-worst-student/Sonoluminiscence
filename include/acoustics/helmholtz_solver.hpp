@@ -6,7 +6,7 @@
 
 #include "acoustics/acoustics_problem.hpp"
 #include "acoustics/boundary_conditions.hpp"
-#include <mesh/mesh_tags.hpp>
+#include "mesh/mesh_tags.hpp"
 
 struct MeshNode {
   double R = 0.0;
@@ -49,7 +49,7 @@ struct LocalElementMatrix {
 };
 
 struct LocalEdgeVector {
-    std::complex<double> Values[2] = {};
+  std::complex<double> Values[2] = {};
 };
 
 class HelmholtzSolver {
@@ -118,9 +118,13 @@ class HelmholtzSolver {
   LocalEdgeVector ComputeLocalSourceEdgeVector(
       const BoundaryEdge& edge) const;
 
-  void AddLocalElementMatrixToGlobalSystem(const TriangleElement& element, const LocalElementMatrix& matrix);
+  void AddLocalElementMatrixToGlobalSystem(
+      const TriangleElement& element,
+      const LocalElementMatrix& local_matrix);
 
-  void AddLocalEdgeVectorToGlobalRightHandSide(const BoundaryEdge& edge, const LocalEdgeVector& local_vector);
+  void AddLocalEdgeVectorToGlobalRightHandSide(
+      const BoundaryEdge& edge,
+      const LocalEdgeVector& local_vector);
 
   bool IsFluidElement(const TriangleElement& element) const;
 
