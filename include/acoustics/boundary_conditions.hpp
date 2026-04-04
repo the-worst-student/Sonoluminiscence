@@ -13,7 +13,7 @@ enum class BoundaryConditionType {
 
 struct BoundaryConditionInfo {
     BoundaryConditionType Type = BoundaryConditionType::Unknown;
-    std::complex<double> Flux = {0, 0};
+    std::complex<double> Flux = {0.0, 0.0};
 
     bool IsKnown() const;
     bool IsRigid() const;

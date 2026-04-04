@@ -28,5 +28,5 @@ struct AcousticsProblem {
     void Validate() const;
 
     bool IsRigidBoundary(int tag) const;
-    bool UseMinusIwmConvention() const;
+    bool UseMinusIwtConvention() const;
 };

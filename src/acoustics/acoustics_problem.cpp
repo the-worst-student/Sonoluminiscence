@@ -68,6 +68,6 @@ bool AcousticsProblem::IsRigidBoundary(const int tag) const {
     return std::find(RigidBoundaryTags.begin(),RigidBoundaryTags.end(), tag) != RigidBoundaryTags.end();
 }
 
-bool AcousticsProblem::UseMinusIwmConvention() const {
+bool AcousticsProblem::UseMinusIwtConvention() const {
     return Convention == TimeConvention::ExpMinusIwt;
 }
