@@ -21,8 +21,7 @@ int AddPoint(double x, double y, double mesh_size) {
 
 GmshDriver::GmshDriver(const ProjectConfig& config) : config_(config) {}
 
-void GmshDriver::BuildAxisymmetricMesh(
-    const std::string& output_mesh_path) const {
+void GmshDriver::BuildAxisymmetricMesh(const std::string& output_mesh_path) const {
   gmsh::initialize();
   gmsh::model::add("axisymmetric_resonator");
 
@@ -32,6 +31,9 @@ void GmshDriver::BuildAxisymmetricMesh(
   const double h_bulk = config_.mesh.h_bulk_m;
   const double h_reflector = config_.mesh.h_reflector_m;
 
+  const double h_bubble = config_.mesh.h_bubble_zone_m;
+  const double bubble_r = config_.geometry.bubble_position.r_m;
+  const double bubble_z = config_.geometry.bubble_position.z_m;
   const double aperture = config_.geometry.reflector.aperture_radius_m;
   const double vertex_z = config_.geometry.reflector.vertex_z_m;
   const double focal_length = config_.geometry.reflector.focal_length_m;
@@ -54,6 +56,14 @@ void GmshDriver::BuildAxisymmetricMesh(
     throw std::invalid_argument(
         "For current geometry source_z must equal vessel_height");
   }
+  if (bubble_r < 0.0 || bubble_r > vessel_radius) {
+    throw std::invalid_argument("Bubble r-coordinate is outside vessel bounds");
+  }
+
+  if (bubble_z < 0.0 || bubble_z > vessel_height) {
+    throw std::invalid_argument("Bubble z-coordinate is outside vessel bounds");
+  }
+
 
   const int p0 = AddPoint(0.0, 0.0, h_bulk);
   const int p1 = AddPoint(vessel_radius, 0.0, h_bulk);
@@ -234,6 +244,30 @@ void GmshDriver::BuildAxisymmetricMesh(
     gmsh::model::setPhysicalName(
         1, static_cast<int>(BoundaryTag::cAxis), "axis");
   }
+
+  const int bubble_point = AddPoint(bubble_r, bubble_z, h_bubble);
+
+  gmsh::model::occ::synchronize();
+
+  const int bubble_distance_field = gmsh::model::mesh::field::add("Distance");
+  gmsh::model::mesh::field::setNumbers(bubble_distance_field, "PointsList", std::vector<double>{static_cast<double>(bubble_point)});
+
+  const int bubble_threshold_field = gmsh::model::mesh::field::add("Threshold");
+  gmsh::model::mesh::field::setNumber(bubble_threshold_field, "InField", bubble_distance_field);
+  gmsh::model::mesh::field::setNumber(bubble_threshold_field, "SizeMin", h_bubble);
+  gmsh::model::mesh::field::setNumber(bubble_threshold_field, "SizeMax", h_bulk);
+
+  const double bubble_refine_radius_min = 0.01;
+  const double bubble_refine_radius_max = 0.03;
+
+  gmsh::model::mesh::field::setNumber(bubble_threshold_field, "DistMin", bubble_refine_radius_min);
+  gmsh::model::mesh::field::setNumber(bubble_threshold_field, "DistMax", bubble_refine_radius_max);
+
+  gmsh::model::mesh::field::setAsBackgroundMesh(bubble_threshold_field);
+
+  gmsh::option::setNumber("Mesh.MeshSizeFromPoints", 0);
+  gmsh::option::setNumber("Mesh.MeshSizeFromCurvature", 0);
+  gmsh::option::setNumber("Mesh.MeshSizeExtendFromBoundary", 0);
 
   gmsh::model::mesh::generate(2);
   gmsh::write(output_mesh_path);

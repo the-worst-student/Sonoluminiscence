@@ -6,7 +6,7 @@
 #include <mesh/gmsh_driver.hpp>
 
 int main(int argc, char **argv) {
-    const std::string config_path = argc > 1 ? argv[1] : "config/base.yaml";
+    const std::string config_path = argc > 1 ? argv[1] : "configs/base.yaml";
     const std::string output_mesh_path = argc > 2 ? argv[2] : "mesh.msh";
 
     try {

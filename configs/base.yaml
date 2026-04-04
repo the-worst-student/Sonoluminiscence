@@ -24,14 +24,14 @@ geometry:
     z_m: 0.100
 
   bubble_position:
-    r_m: 0.000
-    z_m: 0.030
+    r_m: 0.025
+    z_m: 0.050
 
 mesh:
-  h_bulk_m: 0.0015
-  h_source_m: 0.0007
-  h_reflector_m: 0.0007
-  h_bubble_zone_m: 0.0005
+  h_bulk_m: 0.008
+  h_source_m: 0.008
+  h_reflector_m: 0.008
+  h_bubble_zone_m: 0.00015
 
 liquid:
   density_kg_m3: 998.0
