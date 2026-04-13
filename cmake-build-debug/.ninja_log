@@ -1,6 +1,0 @@
-# ninja log v6
-7	252	1775254967916267001	CMakeFiles/build_geometry.dir/apps/build_geometry.cpp.o	afbef195752671cc
-421	643	1775254968330251538	build_geometry	977dbd98a67e46ef
-1	184	1775174701988998374	CMakeFiles/build_geometry.dir/src/geometry/reflector_geometry.cpp.o	e2f1e7ffb7c77ef0
-7	421	1775254967917684908	CMakeFiles/build_geometry.dir/src/mesh/gmsh_driver.cpp.o	86cb3b6dc8bc5e24
-1	947	1775174701988350901	CMakeFiles/build_geometry.dir/src/io/yaml_reader.cpp.o	156c7f06a9230b

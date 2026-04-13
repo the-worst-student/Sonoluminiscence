@@ -1,4 +1,0 @@
-/home/artur/CLionProjects/Sonoluminiscence/build/CMakeFiles/build_geometry.dir
-/home/artur/CLionProjects/Sonoluminiscence/build/CMakeFiles/solve_acoustics.dir
-/home/artur/CLionProjects/Sonoluminiscence/build/CMakeFiles/edit_cache.dir
-/home/artur/CLionProjects/Sonoluminiscence/build/CMakeFiles/rebuild_cache.dir
