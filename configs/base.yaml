@@ -58,3 +58,24 @@ acoustics:
   output:
     sample_bubble_point: true
     compute_focus_region: true
+
+bubble:
+  equilibrium_radius_m: 5.0e-6
+  initial_radius_m: 5.0e-6
+  initial_velocity_m_s: 0.0
+  initial_temperature_k: 293.15
+
+  drive:
+    pressure_amplitude_pa: 2.0e4
+    phase_rad: 0.0
+
+  gas:
+    hard_core_radius_m: 5.0e-7
+    heat_capacity_cv_j_mol_k: 20.8
+    thermal_conductivity_w_m_k: 0.026
+    thermal_layer_thickness_m: 5.0e-7
+
+  integration:
+    time_step_s: 2.0e-8
+    final_time_s: 2.0e-4
+    output_every: 20
