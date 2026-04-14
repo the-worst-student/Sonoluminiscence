@@ -1,12 +1,34 @@
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
-#include <io/yaml_reader.hpp>
-#include <mesh/gmsh_driver.hpp>
+#include "io/yaml_reader.hpp"
+#include "mesh/gmsh_driver.hpp"
 
-int main(int argc, char **argv) {
-    const std::string config_path = argc > 1 ? argv[1] : "configs/base.yaml";
+namespace {
+
+std::string ResolveExistingPath(const std::string& path) {
+    namespace fs = std::filesystem;
+
+    const fs::path direct(path);
+    if (fs::exists(direct)) {
+        return direct.string();
+    }
+
+    const fs::path parent = fs::path("..") / direct;
+    if (fs::exists(parent)) {
+        return parent.string();
+    }
+
+    return path;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    const std::string config_path =
+        argc > 1 ? ResolveExistingPath(argv[1]) : ResolveExistingPath("configs/base.yaml");
     const std::string output_mesh_path = argc > 2 ? argv[2] : "mesh.msh";
 
     try {
@@ -26,5 +48,6 @@ int main(int argc, char **argv) {
                   << error.what() << '\n';
         return 1;
     }
+
     return 0;
 }

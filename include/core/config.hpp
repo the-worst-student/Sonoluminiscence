@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
+
 #include <string>
+#include <vector>
 
 struct ProjectInfoConfig {
     std::string name;
@@ -13,7 +14,6 @@ struct VesselConfig {
     double height_m;
 };
 
-// Reflector's form equation = z0 + r^2/4f
 struct ReflectorConfig {
     bool enabled;
     std::string type;
@@ -78,10 +78,39 @@ struct AcousticsConfig {
     AcousticsOutputConfig output;
 };
 
+struct BubbleDriveConfig {
+    double pressure_amplitude_pa;
+    double phase_rad;
+};
+
+struct BubbleGasConfig {
+    double hard_core_radius_m;
+    double heat_capacity_cv_j_mol_k;
+    double thermal_conductivity_w_m_k;
+    double thermal_layer_thickness_m;
+};
+
+struct BubbleIntegrationConfig {
+    double time_step_s;
+    double final_time_s;
+    int output_every;
+};
+
+struct BubbleConfig {
+    double equilibrium_radius_m;
+    double initial_radius_m;
+    double initial_velocity_m_s;
+    double initial_temperature_k;
+    BubbleDriveConfig drive;
+    BubbleGasConfig gas;
+    BubbleIntegrationConfig integration;
+};
+
 struct ProjectConfig {
     ProjectInfoConfig project;
     GeometryConfig geometry;
     MeshConfig mesh{};
     LiquidConfig liquid{};
     AcousticsConfig acoustics;
+    BubbleConfig bubble{};
 };

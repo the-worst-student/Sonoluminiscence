@@ -160,5 +160,57 @@ ProjectConfig YamlReader::ReadProjectConfig(const std::string& file_path) {
       ReadScalar<bool>(output["compute_focus_region"],
                        "acoustics.output.compute_focus_region");
 
+    const YAML::Node bubble = root["bubble"];
+  RequireNode(bubble, "bubble");
+
+  config.bubble.equilibrium_radius_m =
+      ReadScalar<double>(bubble["equilibrium_radius_m"],
+                         "bubble.equilibrium_radius_m");
+  config.bubble.initial_radius_m =
+      ReadScalar<double>(bubble["initial_radius_m"],
+                         "bubble.initial_radius_m");
+  config.bubble.initial_velocity_m_s =
+      ReadScalar<double>(bubble["initial_velocity_m_s"],
+                         "bubble.initial_velocity_m_s");
+  config.bubble.initial_temperature_k =
+      ReadScalar<double>(bubble["initial_temperature_k"],
+                         "bubble.initial_temperature_k");
+
+  const YAML::Node bubble_drive = bubble["drive"];
+  RequireNode(bubble_drive, "bubble.drive");
+  config.bubble.drive.pressure_amplitude_pa =
+      ReadScalar<double>(bubble_drive["pressure_amplitude_pa"],
+                         "bubble.drive.pressure_amplitude_pa");
+  config.bubble.drive.phase_rad =
+      ReadScalar<double>(bubble_drive["phase_rad"],
+                         "bubble.drive.phase_rad");
+
+  const YAML::Node bubble_gas = bubble["gas"];
+  RequireNode(bubble_gas, "bubble.gas");
+  config.bubble.gas.hard_core_radius_m =
+      ReadScalar<double>(bubble_gas["hard_core_radius_m"],
+                         "bubble.gas.hard_core_radius_m");
+  config.bubble.gas.heat_capacity_cv_j_mol_k =
+      ReadScalar<double>(bubble_gas["heat_capacity_cv_j_mol_k"],
+                         "bubble.gas.heat_capacity_cv_j_mol_k");
+  config.bubble.gas.thermal_conductivity_w_m_k =
+      ReadScalar<double>(bubble_gas["thermal_conductivity_w_m_k"],
+                         "bubble.gas.thermal_conductivity_w_m_k");
+  config.bubble.gas.thermal_layer_thickness_m =
+      ReadScalar<double>(bubble_gas["thermal_layer_thickness_m"],
+                         "bubble.gas.thermal_layer_thickness_m");
+
+  const YAML::Node bubble_integration = bubble["integration"];
+  RequireNode(bubble_integration, "bubble.integration");
+  config.bubble.integration.time_step_s =
+      ReadScalar<double>(bubble_integration["time_step_s"],
+                         "bubble.integration.time_step_s");
+  config.bubble.integration.final_time_s =
+      ReadScalar<double>(bubble_integration["final_time_s"],
+                         "bubble.integration.final_time_s");
+  config.bubble.integration.output_every =
+      ReadScalar<int>(bubble_integration["output_every"],
+                      "bubble.integration.output_every");
+
   return config;
 }
