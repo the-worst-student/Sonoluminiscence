@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(yaml-cpp REQUIRED)
+find_package(Eigen3 REQUIRED NO_MODULE)
 find_library(GMSH_LIB gmsh REQUIRED)
 
 add_executable(build_geometry
@@ -25,4 +26,4 @@ add_executable(solve_acoustics
 )
 
 target_include_directories(solve_acoustics PRIVATE include)
-target_link_libraries(solve_acoustics PRIVATE yaml-cpp ${GMSH_LIB})
+target_link_libraries(solve_acoustics PRIVATE yaml-cpp Eigen3::Eigen ${GMSH_LIB})
