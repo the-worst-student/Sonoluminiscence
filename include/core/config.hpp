@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
+
 #include <string>
+#include <vector>
 
 struct ProjectInfoConfig {
     std::string name;
@@ -13,7 +14,6 @@ struct VesselConfig {
     double height_m;
 };
 
-// Reflector's form equation = z0 + r^2/4f
 struct ReflectorConfig {
     bool enabled;
     std::string type;
@@ -114,4 +114,3 @@ struct ProjectConfig {
     AcousticsConfig acoustics;
     BubbleConfig bubble{};
 };
-

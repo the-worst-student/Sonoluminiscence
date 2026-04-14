@@ -28,10 +28,10 @@ geometry:
     z_m: 0.050
 
 mesh:
-  h_bulk_m: 0.008
-  h_source_m: 0.008
-  h_reflector_m: 0.008
-  h_bubble_zone_m: 0.00015
+  h_bulk_m: 0.015
+  h_source_m: 0.015
+  h_reflector_m: 0.015
+  h_bubble_zone_m: 0.005
 
 liquid:
   density_kg_m3: 998.0

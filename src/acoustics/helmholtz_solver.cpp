@@ -218,8 +218,11 @@ void HelmholtzSolver::Solve() {
         if (Matrix[row].size() != dof_count) {
             throw std::runtime_error("Global matrix row has invalid size");
         }
+
         for (std::size_t col = 0; col < dof_count; ++col) {
-            system_matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(col)) = Matrix[row][col];
+            system_matrix(
+                static_cast<Eigen::Index>(row),
+                static_cast<Eigen::Index>(col)) = Matrix[row][col];
         }
 
         rhs_vector(static_cast<Eigen::Index>(row)) = RightHandSide[row];
@@ -227,15 +230,22 @@ void HelmholtzSolver::Solve() {
 
     Eigen::PartialPivLU<Eigen::MatrixXcd> lu(system_matrix);
     const Eigen::VectorXcd solution_vector = lu.solve(rhs_vector);
-    const Eigen::VectorXcd residual_vector = system_matrix * solution_vector - rhs_vector;
+    const Eigen::VectorXcd residual_vector =
+        system_matrix * solution_vector - rhs_vector;
+
     const double rhs_norm = rhs_vector.norm();
     const double residual_norm = residual_vector.norm();
     const double relative_residual =
-    rhs_norm > 0.0 ? residual_norm / rhs_norm : residual_norm;
+        rhs_norm > 0.0 ? residual_norm / rhs_norm : residual_norm;
 
     if (!solution_vector.allFinite()) {
         throw std::runtime_error("Solution contains non-finite values");
     }
+
+    if (!std::isfinite(relative_residual)) {
+        throw std::runtime_error("Relative residual is not finite");
+    }
+
     Solution.NodalValues.resize(dof_count);
     for (std::size_t i = 0; i < dof_count; ++i) {
         Solution.NodalValues[i] =
@@ -243,21 +253,77 @@ void HelmholtzSolver::Solve() {
     }
 
     Solved = true;
-    Solution.NodalValues.assign(GetNumberOfDofs(), std::complex<double>(0.0, 0.0));
 }
 
 std::complex<double> HelmholtzSolver::SamplePressure(
-    const double r, const double z) const {
-  if (!Solved) {
-    throw std::runtime_error("Cannot sample pressure before solve");
-  }
+    const double r,
+    const double z) const {
+    if (!Solved) {
+        throw std::runtime_error("Cannot sample pressure before solve");
+    }
 
-  (void)r;
-  (void)z;
-  return {0.0, 0.0};
+    const double tolerance = 1e-10;
+
+    for (const TriangleElement& element : Elements) {
+        if (!IsFluidElement(element)) {
+            continue;
+        }
+
+        const MeshNode& node0 =
+            Nodes.at(static_cast<std::size_t>(element.Node0));
+        const MeshNode& node1 =
+            Nodes.at(static_cast<std::size_t>(element.Node1));
+        const MeshNode& node2 =
+            Nodes.at(static_cast<std::size_t>(element.Node2));
+
+        const double denominator =
+            (node1.Z - node2.Z) * (node0.R - node2.R) +
+            (node2.R - node1.R) * (node0.Z - node2.Z);
+
+        if (std::abs(denominator) < 1e-14) {
+            continue;
+        }
+
+        const double lambda0 =
+            ((node1.Z - node2.Z) * (r - node2.R) +
+             (node2.R - node1.R) * (z - node2.Z)) /
+            denominator;
+
+        const double lambda1 =
+            ((node2.Z - node0.Z) * (r - node2.R) +
+             (node0.R - node2.R) * (z - node2.Z)) /
+            denominator;
+
+        const double lambda2 = 1.0 - lambda0 - lambda1;
+
+        const bool inside_triangle =
+            lambda0 >= -tolerance &&
+            lambda1 >= -tolerance &&
+            lambda2 >= -tolerance &&
+            lambda0 <= 1.0 + tolerance &&
+            lambda1 <= 1.0 + tolerance &&
+            lambda2 <= 1.0 + tolerance;
+
+        if (!inside_triangle) {
+            continue;
+        }
+
+        const std::complex<double> value0 =
+            Solution.NodalValues.at(static_cast<std::size_t>(element.Node0));
+        const std::complex<double> value1 =
+            Solution.NodalValues.at(static_cast<std::size_t>(element.Node1));
+        const std::complex<double> value2 =
+            Solution.NodalValues.at(static_cast<std::size_t>(element.Node2));
+
+        return lambda0 * value0 + lambda1 * value1 + lambda2 * value2;
+    }
+
+    throw std::runtime_error(
+        "Sampling point is outside the fluid finite-element mesh");
 }
 
 const HelmholtzSolution& HelmholtzSolver::GetSolution() const {
+
   if (!Solved) {
     throw std::runtime_error("Solution is not available before solve");
   }
