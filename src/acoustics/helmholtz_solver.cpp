@@ -3,7 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <unordered_map>
-
+#include <Eigen/Dense>
 #include <gmsh.h>
 
 HelmholtzSolver::HelmholtzSolver(
@@ -200,14 +200,50 @@ void HelmholtzSolver::Assemble() {
 }
 
 void HelmholtzSolver::Solve() {
-  if (!Assembled) {
-    throw std::runtime_error("Cannot solve before system is assembled");
-  }
+    if (!Assembled) {
+        throw std::runtime_error("Cannot solve before system is assembled");
+    }
 
-  Solution.NodalValues.assign(
-      GetNumberOfDofs(), std::complex<double>(0.0, 0.0));
+    const std::size_t dof_count = GetNumberOfDofs();
+    if (dof_count == 0) {
+        throw std::runtime_error("System has zero degrees of freedom");
+    }
 
-  Solved = true;
+    Eigen::MatrixXcd system_matrix(
+        static_cast<Eigen::Index>(dof_count),
+        static_cast<Eigen::Index>(dof_count));
+    Eigen::VectorXcd rhs_vector(static_cast<Eigen::Index>(dof_count));
+
+    for (std::size_t row = 0; row < dof_count; ++row) {
+        if (Matrix[row].size() != dof_count) {
+            throw std::runtime_error("Global matrix row has invalid size");
+        }
+        for (std::size_t col = 0; col < dof_count; ++col) {
+            system_matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(col)) = Matrix[row][col];
+        }
+
+        rhs_vector(static_cast<Eigen::Index>(row)) = RightHandSide[row];
+    }
+
+    Eigen::PartialPivLU<Eigen::MatrixXcd> lu(system_matrix);
+    const Eigen::VectorXcd solution_vector = lu.solve(rhs_vector);
+    const Eigen::VectorXcd residual_vector = system_matrix * solution_vector - rhs_vector;
+    const double rhs_norm = rhs_vector.norm();
+    const double residual_norm = residual_vector.norm();
+    const double relative_residual =
+    rhs_norm > 0.0 ? residual_norm / rhs_norm : residual_norm;
+
+    if (!solution_vector.allFinite()) {
+        throw std::runtime_error("Solution contains non-finite values");
+    }
+    Solution.NodalValues.resize(dof_count);
+    for (std::size_t i = 0; i < dof_count; ++i) {
+        Solution.NodalValues[i] =
+            solution_vector(static_cast<Eigen::Index>(i));
+    }
+
+    Solved = true;
+    Solution.NodalValues.assign(GetNumberOfDofs(), std::complex<double>(0.0, 0.0));
 }
 
 std::complex<double> HelmholtzSolver::SamplePressure(
@@ -218,7 +254,7 @@ std::complex<double> HelmholtzSolver::SamplePressure(
 
   (void)r;
   (void)z;
-  return std::complex<double>(0.0, 0.0);
+  return {0.0, 0.0};
 }
 
 const HelmholtzSolution& HelmholtzSolver::GetSolution() const {
