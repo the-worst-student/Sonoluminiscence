@@ -12,7 +12,12 @@ BubbleRhs::BubbleRhs(const ProjectConfig& config) : Parameters((BuildParameters(
         Parameters.StaticPressurePa,
         config.bubble.drive.pressure_amplitude_pa,
         Parameters.AngularFrequencyRadS,
-        config.bubble.drive.phase_rad) {};
+        config.bubble.drive.phase_rad) {}
+
+BubbleRhs::BubbleRhs(
+    const ProjectConfig& config,
+    const PressureCoupling& external_pressure)
+    : Parameters(BuildParameters(config)), ExternalPressure(external_pressure) {}
 
 BubbleDerivative BubbleRhs::Evaluate(const double time_s, const BubbleState& state) const {
     const double external_pressure = ComputeExternalPressure(time_s);
