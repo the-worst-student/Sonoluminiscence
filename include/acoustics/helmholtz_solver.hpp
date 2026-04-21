@@ -67,6 +67,8 @@ class HelmholtzSolver {
   std::complex<double> SamplePressure(double r, double z) const;
 
   const HelmholtzSolution& GetSolution() const;
+  const std::vector<MeshNode>& GetNodes() const;
+  const std::vector<TriangleElement>& GetElements() const;
 
   bool IsMeshLoaded() const;
   bool IsAssembled() const;

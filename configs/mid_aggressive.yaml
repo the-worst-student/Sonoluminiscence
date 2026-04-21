@@ -1,0 +1,81 @@
+project:
+  name: "sl_axisymmetric_test"
+  run_id: "iter0_axisymmetric_mid_aggressive"
+
+geometry:
+  formulation: "axisymmetric"
+
+  vessel:
+    type: "cylinder"
+    radius_m: 0.05
+    height_m: 0.10
+
+  reflector:
+    enabled: true
+    type: "parabolic"
+    focal_length_m: 0.015
+    vertex_z_m: 0.010
+    aperture_radius_m: 0.020
+
+  source_patch:
+    type: "top_disk"
+    r_min_m: 0.005
+    r_max_m: 0.015
+    z_m: 0.100
+
+  bubble_position:
+    r_m: 0.007
+    z_m: 0.023
+
+mesh:
+  h_bulk_m: 0.006
+  h_source_m: 0.003
+  h_reflector_m: 0.0025
+  h_bubble_zone_m: 0.0008
+
+liquid:
+  density_kg_m3: 998.0
+  sound_speed_m_s: 1480.0
+  viscosity_pa_s: 0.001
+  surface_tension_n_m: 0.072
+  static_pressure_pa: 101325.0
+  temperature_k: 293.15
+
+acoustics:
+  formulation: "axisymmetric_helmholtz"
+  frequency_hz: 29000.0
+  time_convention: "exp_minus_iwt"
+
+  source:
+    boundary_tag: 3
+    normal_velocity_m_s: 0.05
+    mode: "uniform"
+
+  rigid_boundaries:
+    - 1
+    - 2
+
+  output:
+    sample_bubble_point: true
+    compute_focus_region: true
+
+bubble:
+  equilibrium_radius_m: 4.0e-6
+  initial_radius_m: 4.0e-6
+  initial_velocity_m_s: 0.0
+  initial_temperature_k: 293.15
+
+  drive:
+    pressure_amplitude_pa: 8.0e4
+    phase_rad: 0.0
+
+  gas:
+    hard_core_radius_m: 5.0e-7
+    heat_capacity_cv_j_mol_k: 20.8
+    thermal_conductivity_w_m_k: 0.026
+    thermal_layer_thickness_m: 5.0e-7
+
+  integration:
+    time_step_s: 2.0e-9
+    final_time_s: 4.0e-4
+    output_every: 20

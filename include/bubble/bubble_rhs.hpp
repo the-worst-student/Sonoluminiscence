@@ -45,6 +45,7 @@ struct BubbleModelParameters {
 class BubbleRhs {
 public:
     explicit BubbleRhs(const ProjectConfig& config);
+    BubbleRhs(const ProjectConfig& config, const PressureCoupling& external_pressure);
     BubbleDerivative Evaluate(double time_s, const BubbleState& state) const;
     double ComputeExternalPressure(double time_s) const;
     double ComputeGasPressure(const BubbleState& state) const;

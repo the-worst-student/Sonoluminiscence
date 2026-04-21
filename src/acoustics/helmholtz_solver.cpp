@@ -331,6 +331,14 @@ const HelmholtzSolution& HelmholtzSolver::GetSolution() const {
   return Solution;
 }
 
+const std::vector<MeshNode>& HelmholtzSolver::GetNodes() const {
+  return Nodes;
+}
+
+const std::vector<TriangleElement>& HelmholtzSolver::GetElements() const {
+  return Elements;
+}
+
 bool HelmholtzSolver::IsMeshLoaded() const {
   return MeshLoaded;
 }
