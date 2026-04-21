@@ -1,6 +1,6 @@
 project:
   name: "sl_axisymmetric_test"
-  run_id: "iter0_axisymmetric"
+  run_id: "iter0_axisymmetric_near_collapse_stable"
 
 geometry:
   formulation: "axisymmetric"
@@ -24,14 +24,14 @@ geometry:
     z_m: 0.100
 
   bubble_position:
-    r_m: 0.025
-    z_m: 0.050
+    r_m: 0.007
+    z_m: 0.023
 
 mesh:
-  h_bulk_m: 0.015
-  h_source_m: 0.015
-  h_reflector_m: 0.015
-  h_bubble_zone_m: 0.005
+  h_bulk_m: 0.006
+  h_source_m: 0.003
+  h_reflector_m: 0.0025
+  h_bubble_zone_m: 0.0008
 
 liquid:
   density_kg_m3: 998.0
@@ -43,12 +43,12 @@ liquid:
 
 acoustics:
   formulation: "axisymmetric_helmholtz"
-  frequency_hz: 25000.0
+  frequency_hz: 29000.0
   time_convention: "exp_minus_iwt"
 
   source:
     boundary_tag: 3
-    normal_velocity_m_s: 0.01
+    normal_velocity_m_s: 0.0065
     mode: "uniform"
 
   rigid_boundaries:
@@ -60,22 +60,22 @@ acoustics:
     compute_focus_region: true
 
 bubble:
-  equilibrium_radius_m: 5.0e-6
-  initial_radius_m: 5.0e-6
+  equilibrium_radius_m: 6.0e-6
+  initial_radius_m: 6.0e-6
   initial_velocity_m_s: 0.0
   initial_temperature_k: 293.15
 
   drive:
-    pressure_amplitude_pa: 2.0e4
+    pressure_amplitude_pa: 1.2e5
     phase_rad: 0.0
 
   gas:
     hard_core_radius_m: 5.0e-7
     heat_capacity_cv_j_mol_k: 20.8
     thermal_conductivity_w_m_k: 0.026
-    thermal_layer_thickness_m: 5.0e-7
+    thermal_layer_thickness_m: 5.0e-6
 
   integration:
-    time_step_s: 2.0e-8
-    final_time_s: 2.0e-4
+    time_step_s: 5.0e-10
+    final_time_s: 8.0e-5
     output_every: 20
