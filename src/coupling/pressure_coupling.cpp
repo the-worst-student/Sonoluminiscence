@@ -17,7 +17,7 @@ PressureCoupling PressureCoupling::FromComplexPressure(
     const double static_pressure_pa,
     const double angular_frequency_rad_s,
     const std::complex<double> pb) {
-    return PressureCoupling(static_pressure_pa,std::abs(pb), angular_frequency_rad_s,std::arg(pb));
+    return PressureCoupling(static_pressure_pa,std::abs(pb), angular_frequency_rad_s,-std::arg(pb));
 }
 
 double PressureCoupling::AcousticComponent(const double time_s) const {

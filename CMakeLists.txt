@@ -23,10 +23,14 @@ target_link_libraries(build_geometry PRIVATE yaml-cpp ${GMSH_LIB})
 add_executable(solve_acoustics
         apps/solve_acoustics.cpp
         src/io/yaml_reader.cpp
+        src/io/result_writer.cpp
+        src/io/vtk_writer.cpp
         src/acoustics/acoustics_problem.cpp
         src/acoustics/boundary_conditions.cpp
         src/acoustics/helmholtz_solver.cpp
+        src/acoustics/field_sampler.cpp
         src/coupling/pressure_coupling.cpp
+        src/coupling/bubble_excitation.cpp
 )
 
 target_include_directories(solve_acoustics PRIVATE include "${GMSH_INCLUDE_DIR}")
@@ -64,6 +68,7 @@ add_executable(run_pipeline
         src/acoustics/field_sampler.cpp
         src/coupling/pressure_coupling.cpp
         src/coupling/pipeline.cpp
+        src/coupling/bubble_excitation.cpp
         src/bubble/bubble_rhs.cpp
         src/bubble/gas_model.cpp
         src/bubble/ode_solver.cpp
