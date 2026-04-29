@@ -1,6 +1,0 @@
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/build_geometry.dir
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/solve_acoustics.dir
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/solve_bubble.dir
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/run_pipeline.dir
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/edit_cache.dir
-/home/artur/Загрузки/Sonoluminiscence-acoustic_weeks2_4/Sonoluminiscence-acoustic_iter/build/CMakeFiles/rebuild_cache.dir

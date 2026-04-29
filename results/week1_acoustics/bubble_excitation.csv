@@ -1,2 +1,0 @@
-case_id,frequency_hz,omega_rad_s,bubble_r_m,bubble_z_m,static_pressure_pa,liquid_temperature_k,equilibrium_radius_m,pb_real_pa,pb_imag_pa,pb_abs_pa,pb_argument_rad,drive_amplitude_pa,drive_phase_rad
-iter0_axisymmetric_near_collapse_stable,100000,628318.53071795858,0.0070000000000000001,0.023,101325,293.14999999999998,6.0000000000000002e-06,0,20413.24723356084,20413.24723356084,1.5707963267948966,20413.24723356084,-1.5707963267948966
