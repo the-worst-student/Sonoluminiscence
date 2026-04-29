@@ -29,6 +29,9 @@ add_executable(solve_acoustics
         src/acoustics/boundary_conditions.cpp
         src/acoustics/helmholtz_solver.cpp
         src/acoustics/field_sampler.cpp
+        src/acoustics/field_derivatives.cpp
+        src/acoustics/gorkov_potential.cpp
+        src/acoustics/gorkov_candidates.cpp
         src/coupling/pressure_coupling.cpp
         src/coupling/bubble_excitation.cpp
 )
