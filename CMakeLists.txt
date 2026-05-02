@@ -55,6 +55,16 @@ add_executable(solve_bubble
 target_include_directories(solve_bubble PRIVATE include)
 target_link_libraries(solve_bubble PRIVATE yaml-cpp GSL::gsl GSL::gslcblas)
 
+add_executable(solve_bubble_candidates
+        apps/solve_bubble_candidates.cpp
+        src/io/bubble_excitation_reader.cpp
+        src/bubble/bubble_simulation_result.cpp
+        src/bubble/keller_miksis.cpp
+)
+
+target_include_directories(solve_bubble_candidates PRIVATE include)
+target_link_libraries(solve_bubble_candidates PRIVATE yaml-cpp GSL::gsl GSL::gslcblas)
+
 add_executable(run_pipeline
         apps/run_pipeline.cpp
         src/io/yaml_reader.cpp
