@@ -57,9 +57,11 @@ target_link_libraries(solve_bubble PRIVATE yaml-cpp GSL::gsl GSL::gslcblas)
 
 add_executable(solve_bubble_candidates
         apps/solve_bubble_candidates.cpp
+        src/io/yaml_reader.cpp
         src/io/bubble_excitation_reader.cpp
         src/bubble/bubble_simulation_result.cpp
         src/bubble/keller_miksis.cpp
+        src/bubble/adaptive_ode_solver.cpp
 )
 
 target_include_directories(solve_bubble_candidates PRIVATE include)

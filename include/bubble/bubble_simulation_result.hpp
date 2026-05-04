@@ -54,3 +54,14 @@ struct BubbleSimulationResult {
     bool ThermalHeatingOk = false;
     bool ThermoMechanicalLuminescenceCandidate = false;
 };
+
+struct BubbleExcitationInput;
+struct BubblePhysicalParameters;
+class KellerMiksisModel;
+
+BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput& excitation,
+                                                     const KellerMiksisModel& model,
+                                                     const BubblePhysicalParameters& parameters,
+                                                     const std::vector<BubbleSample>& samples,
+                                                     bool integration_success,
+                                                     const std::string& integration_failure_reason);
