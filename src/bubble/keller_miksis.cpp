@@ -46,9 +46,9 @@ KellerMiksisModel::KellerMiksisModel(const BubblePhysicalParameters& parameters,
     }
 }
 
-BubbleStateDerivative KellerMiksisModel::Evaluate(double t, const BubbleState& state) const {
-    if (state.R <= hard_core_radius_m_) {
-        throw std::runtime_error("Bubble radius is not larger than hard-core radius.");
+KmBubbleStateDerivative KellerMiksisModel::Evaluate(double t, const KmBubbleState& state) const {
+    if (state.R <= 1.001 * hard_core_radius_m_) {
+        throw std::runtime_error("Bubble radius is too close to hard-core radius.");
     }
 
     if (state.Tg <= 0.0) {
@@ -59,7 +59,23 @@ BubbleStateDerivative KellerMiksisModel::Evaluate(double t, const BubbleState& s
     const double U = state.U;
     const double Tg = state.Tg;
 
+    const double c = parameters_.LiquidSoundSpeedMPerS;
+    const double mach = U / c;
+
+    if (std::abs(U) > 0.8 * c) {
+        throw std::runtime_error("Bubble wall velocity exceeded liquid Mach safety limit.");
+    }
+
+    if (std::abs(1.0 - mach) < 0.05) {
+        throw std::runtime_error("Keller-Miksis compressibility denominator is too close to zero.");
+    }
+
     const double pg = GasPressurePa(state);
+
+    if (!std::isfinite(pg) || pg <= 0.0) {
+        throw std::runtime_error("Gas pressure must be positive and finite.");
+    }
+
     const double pinf = ExternalPressurePa(t);
     const double dpinf_dt = ExternalPressureDerivativePaS(t);
 
@@ -79,8 +95,6 @@ BubbleStateDerivative KellerMiksisModel::Evaluate(double t, const BubbleState& s
     const double d_pg_minus_pinf_dt = dpg_dt - dpinf_dt;
 
     const double rho = parameters_.LiquidDensityKgPerM3;
-    const double c = parameters_.LiquidSoundSpeedMPerS;
-    const double mach = U / c;
 
     const double denominator = R * (1.0 - mach);
 
@@ -92,7 +106,7 @@ BubbleStateDerivative KellerMiksisModel::Evaluate(double t, const BubbleState& s
                              R / (rho * c) * d_pg_minus_pinf_dt -
                              1.5 * U * U * (1.0 - U / (3.0 * c));
 
-    BubbleStateDerivative derivative;
+    KmBubbleStateDerivative derivative;
     derivative.dRdt = U;
     derivative.dUdt = numerator / denominator;
     derivative.dTgdt = dTg_dt;
@@ -100,9 +114,19 @@ BubbleStateDerivative KellerMiksisModel::Evaluate(double t, const BubbleState& s
     return derivative;
 }
 
-double KellerMiksisModel::GasPressurePa(const BubbleState& state) const {
+double KellerMiksisModel::GasPressurePa(const KmBubbleState& state) const {
+    if (state.Tg <= 0.0) {
+        throw std::runtime_error("Gas temperature must be positive.");
+    }
+
     const double effective_volume_m3 = EffectiveVolumeM3(state.R);
-    return argon_amount_mol_ * parameters_.GasMolarConstantJPerMolK * state.Tg / effective_volume_m3;
+    const double pressure_pa = argon_amount_mol_ * parameters_.GasMolarConstantJPerMolK * state.Tg / effective_volume_m3;
+
+    if (!std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
+        throw std::runtime_error("Gas pressure must be positive and finite.");
+    }
+
+    return pressure_pa;
 }
 
 double KellerMiksisModel::ExternalPressurePa(double t) const {
@@ -115,7 +139,7 @@ double KellerMiksisModel::ExternalPressureDerivativePaS(double t) const {
            std::sin(excitation_.OmegaRadS * t + excitation_.DrivePhaseRad);
 }
 
-double KellerMiksisModel::ThermalLayerThicknessM(const BubbleState& state) const {
+double KellerMiksisModel::ThermalLayerThicknessM(const KmBubbleState& state) const {
     constexpr double kVelocityEpsilonMPerS = 1.0e-9;
 
     if (state.R <= 0.0) {
@@ -136,7 +160,7 @@ double KellerMiksisModel::ThermalLayerThicknessM(const BubbleState& state) const
     return std::min(state.R, diffusive_layer_m);
 }
 
-double KellerMiksisModel::HeatLossRateW(const BubbleState& state) const {
+double KellerMiksisModel::HeatLossRateW(const KmBubbleState& state) const {
     const double delta_t_m = ThermalLayerThicknessM(state);
 
     if (delta_t_m <= 0.0) {
@@ -160,9 +184,15 @@ double KellerMiksisModel::EffectiveVolumeM3(double radius_m) const {
         throw std::runtime_error("Radius must be larger than hard-core radius.");
     }
 
-    return 4.0 * kPi / 3.0 * (Cube(radius_m) - Cube(hard_core_radius_m_));
+    const double volume_m3 = 4.0 * kPi / 3.0 * (Cube(radius_m) - Cube(hard_core_radius_m_));
+
+    if (!std::isfinite(volume_m3) || volume_m3 <= 0.0) {
+        throw std::runtime_error("Effective gas volume must be positive and finite.");
+    }
+
+    return volume_m3;
 }
 
-double KellerMiksisModel::EffectiveVolumeDerivativeM3S(const BubbleState& state) const {
+double KellerMiksisModel::EffectiveVolumeDerivativeM3S(const KmBubbleState& state) const {
     return 4.0 * kPi * state.R * state.R * state.U;
 }

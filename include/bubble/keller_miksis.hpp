@@ -25,21 +25,21 @@ public:
         const BubbleExcitationInput& excitation
     );
 
-    BubbleStateDerivative Evaluate(double t, const BubbleState& state) const;
+    KmBubbleStateDerivative Evaluate(double t, const KmBubbleState& state) const;
 
-    double GasPressurePa(const BubbleState& state) const;
+    double GasPressurePa(const KmBubbleState& state) const;
     double ExternalPressurePa(double t) const;
     double ExternalPressureDerivativePaS(double t) const;
 
-    double ThermalLayerThicknessM(const BubbleState& state) const;
-    double HeatLossRateW(const BubbleState& state) const;
+    double ThermalLayerThicknessM(const KmBubbleState& state) const;
+    double HeatLossRateW(const KmBubbleState& state) const;
 
     double HardCoreRadiusM() const;
     double ArgonAmountMol() const;
 
 private:
     double EffectiveVolumeM3(double radius_m) const;
-    double EffectiveVolumeDerivativeM3S(const BubbleState& state) const;
+    double EffectiveVolumeDerivativeM3S(const KmBubbleState& state) const;
 
     BubblePhysicalParameters parameters_;
     BubbleExcitationInput excitation_;

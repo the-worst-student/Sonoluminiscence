@@ -22,7 +22,7 @@ constexpr double kSimulationCycles = 10.0;
 
 struct CandidateSimulationOutput {
     BubbleSimulationResult Result;
-    std::vector<BubbleSample> Samples;
+    std::vector<KmBubbleSample> Samples;
 };
 
 BubblePhysicalParameters MakePhysicalParametersFromConfig(const ProjectConfig& config) {
@@ -43,8 +43,8 @@ BubblePhysicalParameters MakePhysicalParametersFromConfig(const ProjectConfig& c
     return parameters;
 }
 
-BubbleState MakeInitialBubbleState(const BubbleExcitationInput& excitation) {
-    BubbleState state;
+KmBubbleState MakeInitialKmBubbleState(const BubbleExcitationInput& excitation) {
+    KmBubbleState state;
     state.R = excitation.EquilibriumRadiusM;
     state.U = 0.0;
     state.Tg = excitation.LiquidTemperatureK;
@@ -99,13 +99,13 @@ CandidateSimulationOutput SimulateBubbleCandidate(const BubbleExcitationInput& e
 
         KellerMiksisModel model(parameters, excitation);
 
-        const BubbleState initial_state = MakeInitialBubbleState(excitation);
+        const KmBubbleState initial_state = MakeInitialKmBubbleState(excitation);
         const double drive_period_s = 2.0 * kPi / excitation.OmegaRadS;
 
         AdaptiveOdeOptions ode_options = MakeDefaultOdeOptions(drive_period_s);
         AdaptiveOdeSolver solver;
 
-        const auto rhs = [&model](double t, const BubbleState& state) {
+        const auto rhs = [&model](double t, const KmBubbleState& state) {
             return model.Evaluate(t, state);
         };
 
@@ -258,7 +258,7 @@ void WriteBestSbsCandidatesCsv(const std::string& best_csv_path,
     WriteBubbleResultsCsv(best_csv_path, sorted_results);
 }
 
-void WriteBubbleTimeSeriesCsv(const std::string& timeseries_dir, const BubbleExcitationInput& excitation, const BubblePhysicalParameters& parameters, const std::vector<BubbleSample>& samples) {
+void WriteBubbleTimeSeriesCsv(const std::string& timeseries_dir, const BubbleExcitationInput& excitation, const BubblePhysicalParameters& parameters, const std::vector<KmBubbleSample>& samples) {
     if (samples.empty()) {
         return;
     }
@@ -278,8 +278,8 @@ void WriteBubbleTimeSeriesCsv(const std::string& timeseries_dir, const BubbleExc
 
     file << "t_s,R_m,U_m_s,T_g_K,p_g_pa,p_inf_pa,delta_T_m,Q_out_W\n";
 
-    for (const BubbleSample& sample : samples) {
-        const BubbleState& state = sample.State;
+    for (const KmBubbleSample& sample : samples) {
+        const KmBubbleState& state = sample.State;
 
         const double pg_pa = model.GasPressurePa(state);
         const double pinf_pa = model.ExternalPressurePa(sample.TimeS);

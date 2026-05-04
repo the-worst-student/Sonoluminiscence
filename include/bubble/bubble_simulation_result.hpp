@@ -3,21 +3,21 @@
 #include <string>
 #include <vector>
 
-struct BubbleState {
+struct KmBubbleState {
     double R = 0.0;
     double U = 0.0;
     double Tg = 0.0;
 };
 
-struct BubbleStateDerivative {
+struct KmBubbleStateDerivative {
     double dRdt = 0.0;
     double dUdt = 0.0;
     double dTgdt = 0.0;
 };
 
-struct BubbleSample {
+struct KmBubbleSample {
     double TimeS = 0.0;
-    BubbleState State;
+    KmBubbleState State;
 };
 
 struct BubbleSimulationResult {
@@ -62,6 +62,6 @@ class KellerMiksisModel;
 BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput& excitation,
                                                      const KellerMiksisModel& model,
                                                      const BubblePhysicalParameters& parameters,
-                                                     const std::vector<BubbleSample>& samples,
+                                                     const std::vector<KmBubbleSample>& samples,
                                                      bool integration_success,
                                                      const std::string& integration_failure_reason);

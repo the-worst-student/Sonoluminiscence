@@ -23,11 +23,11 @@ struct AdaptiveOdeOptions {
 struct AdaptiveOdeResult {
     bool Success = false;
     std::string FailureReason;
-    std::vector<BubbleSample> Samples;
+    std::vector<KmBubbleSample> Samples;
 };
 
 class AdaptiveOdeSolver {
 public:
-    AdaptiveOdeResult Solve(const BubbleState& initial_state, double t_start, double t_end, const AdaptiveOdeOptions& options,
-                            const std::function<BubbleStateDerivative(double, const BubbleState&)>& rhs) const;
+    AdaptiveOdeResult Solve(const KmBubbleState& initial_state, double t_start, double t_end, const AdaptiveOdeOptions& options,
+                            const std::function<KmBubbleStateDerivative(double, const KmBubbleState&)>& rhs) const;
 };

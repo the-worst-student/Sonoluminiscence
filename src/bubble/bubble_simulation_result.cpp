@@ -25,7 +25,7 @@ void FillCommonFields(BubbleSimulationResult& result, const BubbleExcitationInpu
     result.HardCoreRadiusM = model.HardCoreRadiusM();
 }
 
-bool IsFiniteState(const BubbleState& state) {
+bool IsFiniteState(const KmBubbleState& state) {
     return std::isfinite(state.R) && std::isfinite(state.U) && std::isfinite(state.Tg);
 }
 
@@ -55,7 +55,7 @@ std::string ClassifyStatus(const BubbleSimulationResult& result) {
 BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput& excitation,
                                                      const KellerMiksisModel& model,
                                                      const BubblePhysicalParameters& parameters,
-                                                     const std::vector<BubbleSample>& samples,
+                                                     const std::vector<KmBubbleSample>& samples,
                                                      bool integration_success,
                                                      const std::string& integration_failure_reason) {
     BubbleSimulationResult result;
@@ -82,7 +82,7 @@ BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput
     bool min_radius_detected = false;
 
     for (std::size_t i = 0; i < samples.size(); ++i) {
-        const BubbleState& state = samples[i].State;
+        const KmBubbleState& state = samples[i].State;
 
         if (!IsFiniteState(state)) {
             result.Status = "NumericallyInvalid";
@@ -90,9 +90,16 @@ BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput
             return result;
         }
 
-        if (state.R <= model.HardCoreRadiusM() || state.Tg <= 0.0) {
+        if (state.R <= 1.001 * model.HardCoreRadiusM() || state.Tg <= 0.0) {
             result.Status = "NumericallyInvalid";
             result.FailureReason = "NonPhysicalStateInTimeSeries";
+            return result;
+        }
+
+        if (std::abs(state.U) > 0.8 * parameters.LiquidSoundSpeedMPerS ||
+            std::abs(1.0 - state.U / parameters.LiquidSoundSpeedMPerS) < 0.05) {
+            result.Status = "NumericallyInvalid";
+            result.FailureReason = "MachSafetyLimitExceededInTimeSeries";
             return result;
         }
 
@@ -111,8 +118,8 @@ BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput
         u_max = std::max(u_max, std::abs(state.U));
 
         if (i > 0) {
-            const BubbleState& prev = samples[i - 1].State;
-            const BubbleState& curr = samples[i].State;
+            const KmBubbleState& prev = samples[i - 1].State;
+            const KmBubbleState& curr = samples[i].State;
 
             if (prev.U < 0.0 && curr.U >= 0.0 && curr.U != prev.U) {
                 const double alpha = -prev.U / (curr.U - prev.U);

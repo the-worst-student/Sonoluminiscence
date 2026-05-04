@@ -71,7 +71,7 @@ bubble:
 
   gas:
     hard_core_radius_m: 5.0e-7
-    heat_capacity_cv_j_mol_k: 20.8
+    heat_capacity_cv_j_mol_k: 12.471693927
     thermal_conductivity_w_m_k: 0.026
     thermal_layer_thickness_m: 5.0e-6
 
