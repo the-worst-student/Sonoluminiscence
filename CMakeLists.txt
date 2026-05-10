@@ -65,6 +65,25 @@ if (Eigen3_FOUND AND GMSH_LIB AND GMSH_INCLUDE_DIR)
 
     target_include_directories(solve_acoustics PRIVATE include "${GMSH_INCLUDE_DIR}")
     target_link_libraries(solve_acoustics PRIVATE yaml-cpp Eigen3::Eigen ${GMSH_LIB})
+
+    add_executable(scan_frequency
+            apps/scan_frequency.cpp
+            src/io/yaml_reader.cpp
+            src/io/result_writer.cpp
+            src/io/vtk_writer.cpp
+            src/acoustics/acoustics_problem.cpp
+            src/acoustics/boundary_conditions.cpp
+            src/acoustics/helmholtz_solver.cpp
+            src/acoustics/field_sampler.cpp
+            src/acoustics/field_derivatives.cpp
+            src/acoustics/gorkov_potential.cpp
+            src/acoustics/gorkov_candidates.cpp
+            src/coupling/pressure_coupling.cpp
+            src/coupling/bubble_excitation.cpp
+    )
+
+    target_include_directories(scan_frequency PRIVATE include "${GMSH_INCLUDE_DIR}")
+    target_link_libraries(scan_frequency PRIVATE yaml-cpp Eigen3::Eigen ${GMSH_LIB})
 else()
     message(WARNING "Eigen3 or Gmsh was not found: solve_acoustics target is disabled")
 endif()
