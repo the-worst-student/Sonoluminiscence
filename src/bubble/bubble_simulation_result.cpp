@@ -42,7 +42,7 @@ std::string ClassifyStatus(const BubbleSimulationResult& result) {
         return "SoftCompression";
     }
 
-    if ((result.CompressionRatio >= 3.0 && result.CompressionRatio < 8.0) ||
+    if ((result.CompressionRatio >= 3.0 && result.CompressionRatio < 5.0) ||
         (result.TMaxK >= 1000.0 && result.TMaxK < 8000.0)) {
         return "ModerateCollapse";
     }
@@ -151,7 +151,7 @@ BubbleSimulationResult AnalyzeBubbleSimulationResult(const BubbleExcitationInput
     result.MinRadiusDetected = min_radius_detected;
 
     result.MechanicalCollapseOk =
-        result.CompressionRatio >= 8.0 &&
+        result.CompressionRatio >= 5.0 &&
         result.ExpansionRatio >= 5.0 &&
         result.DynamicRange >= 40.0 &&
         result.LiquidMach >= 0.03 &&

@@ -232,7 +232,7 @@ Hard-core объём нужен, чтобы не допускать нефизи
 Механический критерий коллапса:
 
 ```text
-K_R >= 8
+K_R >= 5
 K_exp >= 5
 K_range >= 40
 M_l >= 0.03
@@ -745,3 +745,170 @@ candidate_001 -> ModerateCollapse
 - Шевченко Никита, Б05-506
 
 ---
+---
+
+## Частотный скан, графики и кривизна потенциала Горькова
+
+В текущей версии добавлен отдельный исполняемый файл:
+
+```text
+scan_frequency
+```
+
+Он делает акустический расчёт не на одной частоте, а на сетке частот. Для каждой частоты программа:
+
+1. читает ту же геометрию и сетку;
+2. обновляет `acoustics.frequency_hz`;
+3. решает задачу Гельмгольца;
+4. считает поле давления;
+5. считает градиент давления;
+6. считает акустическую скорость;
+7. считает потенциал Горькова `U_G`;
+8. считает силу Горькова `F_G = -grad U_G`;
+9. оценивает тензор кривизны потенциала Горькова;
+10. выбирает лучшие точки-кандидаты;
+11. сохраняет CSV/VTK по каждой частоте;
+12. собирает общий файл `bubble_excitations_all.csv` для последующего запуска Keller-Miksis по всем найденным кандидатам.
+
+### Что означает кривизна потенциала Горькова
+
+Кривизна считается как матрица вторых производных потенциала:
+
+```text
+H_G = [ d2U_G/dr2      d2U_G/drdz ]
+      [ d2U_G/drdz     d2U_G/dz2  ]
+```
+
+В CSV выводятся:
+
+| Поле | Смысл |
+|---|---|
+| `gorkov_curvature_rr_j_m2` | компонент `d2U_G/dr2` |
+| `gorkov_curvature_rz_j_m2` | смешанный компонент `d2U_G/drdz` |
+| `gorkov_curvature_zz_j_m2` | компонент `d2U_G/dz2` |
+| `gorkov_curvature_trace_j_m2` | след матрицы кривизны |
+| `gorkov_curvature_det_j2_m4` | определитель матрицы кривизны |
+| `gorkov_curvature_lambda_min_j_m2` | минимальное собственное значение Hessian |
+| `gorkov_curvature_lambda_max_j_m2` | максимальное собственное значение Hessian |
+| `gorkov_curvature_positive_definite` | признак положительной определённости |
+
+Физическая интерпретация в текущей модели такая: положительная кривизна около минимума `U_G` означает локальную акустическую ловушку по координатам пузырька. Это не является прямым критерием радиального схлопывания, потому что координаты пузырька описывают положение центра, а не радиус. Поэтому кривизна используется как дополнительная метрика устойчивости положения кандидата, а финальный вывод о коллапсе делается по Keller-Miksis.
+
+### Быстрый полный запуск
+
+Из корня проекта:
+
+```bash
+chmod +x scripts/run_frequency_scan_pipeline.sh
+./scripts/run_frequency_scan_pipeline.sh configs/base.yaml 20000 200000 25 10
+```
+
+Параметры команды:
+
+```text
+configs/base.yaml     конфиг расчёта
+20000                 минимальная частота, Гц
+200000                максимальная частота, Гц
+25                    число точек частотного скана
+10                    число кандидатов Горькова на каждой частоте
+```
+
+После выполнения результаты будут лежать в каталоге вида:
+
+```text
+results/frequency_scan_20000_200000_25
+```
+
+### Ручной запуск по шагам
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j --target build_geometry scan_frequency solve_bubble_candidates
+
+mkdir -p results/frequency_scan
+
+./build/build_geometry configs/base.yaml results/frequency_scan/mesh.msh
+
+./build/scan_frequency \
+  configs/base.yaml \
+  results/frequency_scan/mesh.msh \
+  results/frequency_scan \
+  20000 \
+  200000 \
+  25 \
+  10 \
+  0
+
+./build/solve_bubble_candidates \
+  configs/base.yaml \
+  results/frequency_scan/bubble_excitations_all.csv \
+  results/frequency_scan/bubble_results_all.csv \
+  results/frequency_scan/timeseries
+
+python3 scripts/plot_frequency_scan.py \
+  results/frequency_scan \
+  results/frequency_scan/bubble_results_all.csv
+```
+
+Последний аргумент `0` у `scan_frequency` означает, что псевдообъёмный VTK не строится. Если нужен 3D-псевдообъём для ParaView, можно поставить, например, `48`:
+
+```bash
+./build/scan_frequency configs/base.yaml results/frequency_scan/mesh.msh results/frequency_scan 20000 200000 25 10 48
+```
+
+### Основные файлы результатов
+
+| Файл | Что содержит |
+|---|---|
+| `frequency_scan_summary.csv` | сводка по всем частотам |
+| `bubble_excitations_all.csv` | входные возбуждения для Keller-Miksis по всем частотам и кандидатам |
+| `bubble_results_all.csv` | итоговые метрики радиальной динамики пузырька |
+| `best_sbs_candidates.csv` | лучшие кандидаты по термомеханическим критериям |
+| `timeseries/*.csv` | временные ряды `R(t)`, `U(t)`, `T_g(t)`, `p_g(t)`, `p_inf(t)` |
+| `plots/*.png` | графики по частотному скану и пузырьковой динамике |
+| `f_*/gorkov_field.csv` | поле давления, сила Горькова и кривизна по узлам для конкретной частоты |
+| `f_*/gorkov_candidates.csv` | кандидаты Горькова для конкретной частоты |
+| `f_*/acoustic_slice.vtk` | VTK-срез для ParaView |
+| `f_*/acoustic_pseudovolume.vtk` | псевдо-3D VTK, если включён экспорт с секторами |
+
+### Графики
+
+Скрипт:
+
+```bash
+python3 scripts/plot_frequency_scan.py results/frequency_scan results/frequency_scan/bubble_results_all.csv
+```
+
+создаёт:
+
+| PNG | Смысл |
+|---|---|
+| `01_pressure_vs_frequency.png` | амплитуда давления от частоты |
+| `02_candidate_score_vs_frequency.png` | лучший акустический score от частоты |
+| `03_gorkov_curvature_vs_frequency.png` | собственные значения кривизны `U_G` от частоты |
+| `04_gorkov_force_vs_frequency.png` | модуль силы Горькова от частоты |
+| `05_bubble_temperature_vs_frequency.png` | максимальная температура газа по запускам пузырька |
+| `06_bubble_collapse_metrics_vs_frequency.png` | `K_R`, `K_exp`, `K_range` |
+| `07_bubble_pressure_mach_vs_frequency.png` | `p_g_max / 1e8` и `M_l` |
+
+### Как смотреть VTK
+
+Открывать в ParaView:
+
+```text
+results/frequency_scan/f_100000Hz/acoustic_slice.vtk
+```
+
+Основные поля для просмотра:
+
+```text
+pressure_abs_pa
+velocity_abs_m_s
+gorkov_potential_j
+gorkov_force_abs_n
+gorkov_curvature_lambda_min_j_m2
+gorkov_curvature_lambda_max_j_m2
+candidate_marker
+candidate_score
+bubble_marker
+```

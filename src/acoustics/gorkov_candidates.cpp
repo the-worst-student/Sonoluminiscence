@@ -100,12 +100,16 @@ std::vector<GorkovCandidate> GorkovCandidates::SelectCandidates(
     double MinPotential = std::numeric_limits<double>::max();
     double MaxPotential = -std::numeric_limits<double>::max();
     double MaxForce = 0.0;
+    double MaxPositiveCurvature = 0.0;
 
     for (const AcousticNodalField& Field : field_data.NodalFields) {
         MaxPressure = std::max(MaxPressure, Field.PressureAbsPa);
         MinPotential = std::min(MinPotential, Field.GorkovPotentialJ);
         MaxPotential = std::max(MaxPotential, Field.GorkovPotentialJ);
         MaxForce = std::max(MaxForce, Field.GorkovForceAbsN);
+        MaxPositiveCurvature = std::max(
+            MaxPositiveCurvature,
+            std::max(0.0, Field.GorkovCurvatureLambdaMinJPerM2));
     }
 
     const std::vector<std::vector<std::size_t>> Adjacency = BuildNodeAdjacency(field_data);
@@ -122,7 +126,11 @@ std::vector<GorkovCandidate> GorkovCandidates::SelectCandidates(
         const double PressureNorm = MaxPressure > 0.0 ? Field.PressureAbsPa / MaxPressure : 0.0;
         const double PotentialNorm = SafeNormalize(Field.GorkovPotentialJ, MinPotential, MaxPotential);
         const double ForceNorm = MaxForce > 0.0 ? Field.GorkovForceAbsN / MaxForce : 0.0;
+        const double CurvatureNorm = MaxPositiveCurvature > 0.0
+            ? std::max(0.0, Field.GorkovCurvatureLambdaMinJPerM2) / MaxPositiveCurvature
+            : 0.0;
         const double LocalBonus = LocalMinimum ? 0.15 : 0.0;
+        const double CurvatureBonus = Field.GorkovCurvatureLambdaMinJPerM2 > 0.0 ? 0.10 : 0.0;
 
         GorkovCandidate Candidate;
         Candidate.NodeIndex = i;
@@ -136,12 +144,18 @@ std::vector<GorkovCandidate> GorkovCandidates::SelectCandidates(
         Candidate.DrivePhaseRad = -Field.PressurePhaseRad;
         Candidate.GorkovPotentialJ = Field.GorkovPotentialJ;
         Candidate.GorkovForceAbsN = Field.GorkovForceAbsN;
+        Candidate.GorkovCurvatureTraceJPerM2 = Field.GorkovCurvatureTraceJPerM2;
+        Candidate.GorkovCurvatureLambdaMinJPerM2 = Field.GorkovCurvatureLambdaMinJPerM2;
+        Candidate.GorkovCurvatureLambdaMaxJPerM2 = Field.GorkovCurvatureLambdaMaxJPerM2;
+        Candidate.GorkovCurvaturePositiveDefinite = Field.GorkovCurvatureLambdaMinJPerM2 > 0.0;
         Candidate.VelocityAbsMS = Field.VelocityAbsMS;
         Candidate.LocalPotentialMinimum = LocalMinimum;
         Candidate.Score =
             options.PressureWeight * PressureNorm -
             options.PotentialWeight * PotentialNorm -
-            options.ForceWeight * ForceNorm + LocalBonus;
+            options.ForceWeight * ForceNorm +
+            options.CurvatureWeight * CurvatureNorm +
+            LocalBonus + CurvatureBonus;
         Pool.push_back(Candidate);
     }
 
@@ -202,7 +216,13 @@ std::string GorkovCandidates::FieldCsv(const AcousticFieldData& field_data) {
     Output << "node_index,r_m,z_m,pressure_re_pa,pressure_im_pa,pressure_abs_pa,"
            << "pressure_phase_rad,grad_p_abs_pa_per_m,velocity_abs_m_s,"
            << "gorkov_potential_j,gorkov_force_r_n,gorkov_force_z_n,"
-           << "gorkov_force_abs_n,candidate_marker,candidate_score\n";
+           << "gorkov_force_abs_n,gorkov_curvature_rr_j_m2,"
+           << "gorkov_curvature_rz_j_m2,gorkov_curvature_zz_j_m2,"
+           << "gorkov_curvature_trace_j_m2,gorkov_curvature_det_j2_m4,"
+           << "gorkov_curvature_lambda_min_j_m2,"
+           << "gorkov_curvature_lambda_max_j_m2,"
+           << "gorkov_curvature_positive_definite,"
+           << "candidate_marker,candidate_score\n";
 
     for (std::size_t i = 0; i < field_data.Nodes.size(); ++i) {
         const MeshNode& Node = field_data.Nodes[i];
@@ -220,6 +240,14 @@ std::string GorkovCandidates::FieldCsv(const AcousticFieldData& field_data) {
                << Field.GorkovForceRN << ','
                << Field.GorkovForceZN << ','
                << Field.GorkovForceAbsN << ','
+               << Field.GorkovCurvatureRRJPerM2 << ','
+               << Field.GorkovCurvatureRZJPerM2 << ','
+               << Field.GorkovCurvatureZZJPerM2 << ','
+               << Field.GorkovCurvatureTraceJPerM2 << ','
+               << Field.GorkovCurvatureDetJ2PerM4 << ','
+               << Field.GorkovCurvatureLambdaMinJPerM2 << ','
+               << Field.GorkovCurvatureLambdaMaxJPerM2 << ','
+               << Field.GorkovCurvaturePositiveDefinite << ','
                << Field.CandidateMarker << ','
                << Field.CandidateScore << '\n';
     }
@@ -234,6 +262,10 @@ std::string GorkovCandidates::CandidatesCsv(
     Output << "candidate_id,node_index,r_m,z_m,pressure_re_pa,pressure_im_pa,"
            << "pressure_abs_pa,pressure_phase_rad,drive_amplitude_pa,"
            << "drive_phase_rad,gorkov_potential_j,gorkov_force_abs_n,"
+           << "gorkov_curvature_trace_j_m2,"
+           << "gorkov_curvature_lambda_min_j_m2,"
+           << "gorkov_curvature_lambda_max_j_m2,"
+           << "gorkov_curvature_positive_definite,"
            << "velocity_abs_m_s,local_potential_minimum,score\n";
 
     for (const GorkovCandidate& Candidate : candidates) {
@@ -249,6 +281,10 @@ std::string GorkovCandidates::CandidatesCsv(
                << Candidate.DrivePhaseRad << ','
                << Candidate.GorkovPotentialJ << ','
                << Candidate.GorkovForceAbsN << ','
+               << Candidate.GorkovCurvatureTraceJPerM2 << ','
+               << Candidate.GorkovCurvatureLambdaMinJPerM2 << ','
+               << Candidate.GorkovCurvatureLambdaMaxJPerM2 << ','
+               << (Candidate.GorkovCurvaturePositiveDefinite ? 1 : 0) << ','
                << Candidate.VelocityAbsMS << ','
                << (Candidate.LocalPotentialMinimum ? 1 : 0) << ','
                << Candidate.Score << '\n';

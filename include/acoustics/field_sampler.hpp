@@ -27,6 +27,15 @@ struct AcousticNodalField {
     double GorkovForceZN = 0.0;
     double GorkovForceAbsN = 0.0;
 
+    double GorkovCurvatureRRJPerM2 = 0.0;
+    double GorkovCurvatureRZJPerM2 = 0.0;
+    double GorkovCurvatureZZJPerM2 = 0.0;
+    double GorkovCurvatureTraceJPerM2 = 0.0;
+    double GorkovCurvatureDetJ2PerM4 = 0.0;
+    double GorkovCurvatureLambdaMinJPerM2 = 0.0;
+    double GorkovCurvatureLambdaMaxJPerM2 = 0.0;
+    double GorkovCurvaturePositiveDefinite = 0.0;
+
     double CandidateMarker = 0.0;
     double CandidateScore = 0.0;
 };
@@ -37,6 +46,10 @@ struct AcousticCellField {
     double VelocityAbsMS = 0.0;
     double GorkovPotentialJ = 0.0;
     double GorkovForceAbsN = 0.0;
+    double GorkovCurvatureTraceJPerM2 = 0.0;
+    double GorkovCurvatureLambdaMinJPerM2 = 0.0;
+    double GorkovCurvatureLambdaMaxJPerM2 = 0.0;
+    double GorkovCurvaturePositiveDefinite = 0.0;
     double CandidateScore = 0.0;
 };
 
