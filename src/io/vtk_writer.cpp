@@ -109,6 +109,13 @@ void VtkWriter::WriteAxisymmetricSlice(
     WritePointScalar("gorkov_force_r_n", [](const AcousticNodalField& Field) { return Field.GorkovForceRN; });
     WritePointScalar("gorkov_force_z_n", [](const AcousticNodalField& Field) { return Field.GorkovForceZN; });
     WritePointScalar("gorkov_force_abs_n", [](const AcousticNodalField& Field) { return Field.GorkovForceAbsN; });
+    WritePointScalar("gorkov_curvature_rr_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureRRJPerM2; });
+    WritePointScalar("gorkov_curvature_rz_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureRZJPerM2; });
+    WritePointScalar("gorkov_curvature_zz_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureZZJPerM2; });
+    WritePointScalar("gorkov_curvature_trace_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureTraceJPerM2; });
+    WritePointScalar("gorkov_curvature_lambda_min_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureLambdaMinJPerM2; });
+    WritePointScalar("gorkov_curvature_lambda_max_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureLambdaMaxJPerM2; });
+    WritePointScalar("gorkov_curvature_positive_definite", [](const AcousticNodalField& Field) { return Field.GorkovCurvaturePositiveDefinite; });
     WritePointScalar("candidate_marker", [](const AcousticNodalField& Field) { return Field.CandidateMarker; });
     WritePointScalar("candidate_score", [](const AcousticNodalField& Field) { return Field.CandidateScore; });
 
@@ -133,6 +140,10 @@ void VtkWriter::WriteAxisymmetricSlice(
     WriteCellScalar("velocity_abs_cell_m_s", [](const AcousticCellField& Field) { return Field.VelocityAbsMS; });
     WriteCellScalar("gorkov_potential_cell_j", [](const AcousticCellField& Field) { return Field.GorkovPotentialJ; });
     WriteCellScalar("gorkov_force_abs_cell_n", [](const AcousticCellField& Field) { return Field.GorkovForceAbsN; });
+    WriteCellScalar("gorkov_curvature_trace_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureTraceJPerM2; });
+    WriteCellScalar("gorkov_curvature_lambda_min_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureLambdaMinJPerM2; });
+    WriteCellScalar("gorkov_curvature_lambda_max_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureLambdaMaxJPerM2; });
+    WriteCellScalar("gorkov_curvature_positive_definite_cell", [](const AcousticCellField& Field) { return Field.GorkovCurvaturePositiveDefinite; });
     WriteCellScalar("candidate_score_cell", [](const AcousticCellField& Field) { return Field.CandidateScore; });
 }
 
@@ -244,6 +255,10 @@ void VtkWriter::WritePseudoVolume(
     WritePointScalar("velocity_abs_m_s", [](const AcousticNodalField& Field) { return Field.VelocityAbsMS; });
     WritePointScalar("gorkov_potential_j", [](const AcousticNodalField& Field) { return Field.GorkovPotentialJ; });
     WritePointScalar("gorkov_force_abs_n", [](const AcousticNodalField& Field) { return Field.GorkovForceAbsN; });
+    WritePointScalar("gorkov_curvature_trace_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureTraceJPerM2; });
+    WritePointScalar("gorkov_curvature_lambda_min_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureLambdaMinJPerM2; });
+    WritePointScalar("gorkov_curvature_lambda_max_j_m2", [](const AcousticNodalField& Field) { return Field.GorkovCurvatureLambdaMaxJPerM2; });
+    WritePointScalar("gorkov_curvature_positive_definite", [](const AcousticNodalField& Field) { return Field.GorkovCurvaturePositiveDefinite; });
     WritePointScalar("candidate_marker", [](const AcousticNodalField& Field) { return Field.CandidateMarker; });
     WritePointScalar("candidate_score", [](const AcousticNodalField& Field) { return Field.CandidateScore; });
 
@@ -275,5 +290,9 @@ void VtkWriter::WritePseudoVolume(
     WriteCellScalar("velocity_abs_cell_m_s", [](const AcousticCellField& Field) { return Field.VelocityAbsMS; });
     WriteCellScalar("gorkov_potential_cell_j", [](const AcousticCellField& Field) { return Field.GorkovPotentialJ; });
     WriteCellScalar("gorkov_force_abs_cell_n", [](const AcousticCellField& Field) { return Field.GorkovForceAbsN; });
+    WriteCellScalar("gorkov_curvature_trace_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureTraceJPerM2; });
+    WriteCellScalar("gorkov_curvature_lambda_min_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureLambdaMinJPerM2; });
+    WriteCellScalar("gorkov_curvature_lambda_max_cell_j_m2", [](const AcousticCellField& Field) { return Field.GorkovCurvatureLambdaMaxJPerM2; });
+    WriteCellScalar("gorkov_curvature_positive_definite_cell", [](const AcousticCellField& Field) { return Field.GorkovCurvaturePositiveDefinite; });
     WriteCellScalar("candidate_score_cell", [](const AcousticCellField& Field) { return Field.CandidateScore; });
 }

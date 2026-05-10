@@ -20,6 +20,10 @@ struct GorkovCandidate {
     double DrivePhaseRad = 0.0;
     double GorkovPotentialJ = 0.0;
     double GorkovForceAbsN = 0.0;
+    double GorkovCurvatureTraceJPerM2 = 0.0;
+    double GorkovCurvatureLambdaMinJPerM2 = 0.0;
+    double GorkovCurvatureLambdaMaxJPerM2 = 0.0;
+    bool GorkovCurvaturePositiveDefinite = false;
     double VelocityAbsMS = 0.0;
     double Score = 0.0;
     bool LocalPotentialMinimum = false;
@@ -31,6 +35,7 @@ struct GorkovCandidateOptions {
     double PressureWeight = 1.0;
     double PotentialWeight = 0.6;
     double ForceWeight = 0.4;
+    double CurvatureWeight = 0.5;
 };
 
 class GorkovCandidates {
