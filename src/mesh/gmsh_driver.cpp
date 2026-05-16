@@ -33,6 +33,14 @@ void EnsurePointInsideVessel(const VesselGeometry& vessel_geometry,
     }
 }
 
+void RequireNonEmptyBoundaryGroup(const std::vector<int>& curves,
+                                  const std::string& group_name) {
+    if (curves.empty()) {
+        throw std::runtime_error(
+            "Failed to detect required boundary group: " + group_name);
+    }
+}
+
 }  // namespace
 
 GmshDriver::GmshDriver(const ProjectConfig& config) : config_(config) {}
@@ -296,37 +304,34 @@ void GmshDriver::BuildAxisymmetricMesh(const std::string& output_mesh_path) cons
         }
     }
 
-    if (!wall_curves.empty()) {
-        gmsh::model::addPhysicalGroup(
-            1, wall_curves, static_cast<int>(BoundaryTag::cWall));
+    RequireNonEmptyBoundaryGroup(wall_curves, "wall");
+    RequireNonEmptyBoundaryGroup(reflector_curves, "reflector");
+    RequireNonEmptyBoundaryGroup(source_curves, "source");
+    RequireNonEmptyBoundaryGroup(axis_curves, "axis");
 
-        gmsh::model::setPhysicalName(
-            1, static_cast<int>(BoundaryTag::cWall), "wall");
-    }
+    gmsh::model::addPhysicalGroup(
+        1, wall_curves, static_cast<int>(BoundaryTag::cWall));
 
-    if (!reflector_curves.empty()) {
-        gmsh::model::addPhysicalGroup(
-            1, reflector_curves, static_cast<int>(BoundaryTag::cReflector));
+    gmsh::model::setPhysicalName(
+        1, static_cast<int>(BoundaryTag::cWall), "wall");
 
-        gmsh::model::setPhysicalName(
-            1, static_cast<int>(BoundaryTag::cReflector), "reflector");
-    }
+    gmsh::model::addPhysicalGroup(
+        1, reflector_curves, static_cast<int>(BoundaryTag::cReflector));
 
-    if (!source_curves.empty()) {
-        gmsh::model::addPhysicalGroup(
-            1, source_curves, static_cast<int>(BoundaryTag::cSource));
+    gmsh::model::setPhysicalName(
+        1, static_cast<int>(BoundaryTag::cReflector), "reflector");
 
-        gmsh::model::setPhysicalName(
-            1, static_cast<int>(BoundaryTag::cSource), "source");
-    }
+    gmsh::model::addPhysicalGroup(
+        1, source_curves, static_cast<int>(BoundaryTag::cSource));
 
-    if (!axis_curves.empty()) {
-        gmsh::model::addPhysicalGroup(
-            1, axis_curves, static_cast<int>(BoundaryTag::cAxis));
+    gmsh::model::setPhysicalName(
+        1, static_cast<int>(BoundaryTag::cSource), "source");
 
-        gmsh::model::setPhysicalName(
-            1, static_cast<int>(BoundaryTag::cAxis), "axis");
-    }
+    gmsh::model::addPhysicalGroup(
+        1, axis_curves, static_cast<int>(BoundaryTag::cAxis));
+
+    gmsh::model::setPhysicalName(
+        1, static_cast<int>(BoundaryTag::cAxis), "axis");
 
     const int bubble_point = AddPoint(bubble_r, bubble_z, h_bubble);
 
