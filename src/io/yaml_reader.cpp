@@ -8,27 +8,39 @@
 
 namespace {
 
-void RequireNode(const YAML::Node& node, const std::string& name) {
-  if (!node) {
-    throw std::runtime_error("Missing required YAML node: " + name);
-  }
-}
+    void RequireNode(const YAML::Node& node, const std::string& name) {
+        if (!node) {
+            throw std::runtime_error("Missing required YAML node: " + name);
+        }
+    }
+
+    template <typename T>
+    T ReadScalar(const YAML::Node& node, const std::string& name) {
+        RequireNode(node, name);
+
+        try {
+            return node.as<T>();
+        } catch (const std::exception& error) {
+            throw std::runtime_error("Failed to parse YAML field '" + name +
+                                     "': " + error.what());
+        }
+    }
 
     template <typename T>
     T ReadOptionalScalar(const YAML::Node& node,
                          const std::string& name,
                          const T& default_value) {
-    if (!node) {
-        return default_value;
-    }
+        if (!node) {
+            return default_value;
+        }
 
-    try {
-        return node.as<T>();
-    } catch (const std::exception& error) {
-        throw std::runtime_error("Failed to parse YAML field '" + name +
-                                 "': " + error.what());
+        try {
+            return node.as<T>();
+        } catch (const std::exception& error) {
+            throw std::runtime_error("Failed to parse YAML field '" + name +
+                                     "': " + error.what());
+        }
     }
-}
 
 }  // namespace
 

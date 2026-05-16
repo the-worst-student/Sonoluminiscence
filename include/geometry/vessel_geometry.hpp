@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "core/config.hpp"
 
 struct VesselWallPoint {
@@ -19,6 +21,12 @@ public:
 
     VesselGeometryData BuildData() const;
 
+    double RadiusAtZ(double z_m) const;
+
 private:
     VesselConfig config_;
+
+    void ValidateConfig() const;
+    int ProfilePointCount() const;
+    double RadiusAtAlpha(double alpha) const;
 };
