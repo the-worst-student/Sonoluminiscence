@@ -10,8 +10,17 @@ struct ProjectInfoConfig {
 
 struct VesselConfig {
     std::string type;
+
     double radius_m;
     double height_m;
+
+    double bottom_radius_m;
+    double top_radius_m;
+
+    double bulge_m;
+    double neck_m;
+
+    int profile_points;
 };
 
 struct ReflectorConfig {

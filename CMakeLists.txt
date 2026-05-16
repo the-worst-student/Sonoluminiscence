@@ -37,6 +37,7 @@ if (GMSH_LIB AND GMSH_INCLUDE_DIR)
             apps/build_geometry.cpp
             src/io/yaml_reader.cpp
             src/geometry/reflector_geometry.cpp
+            src/geometry/vessel_geometry.cpp
             src/mesh/gmsh_driver.cpp
     )
 
@@ -119,6 +120,7 @@ if (GSL_FOUND AND Eigen3_FOUND AND GMSH_LIB AND GMSH_INCLUDE_DIR)
             src/postprocess/metrics.cpp
             src/mesh/gmsh_driver.cpp
             src/geometry/reflector_geometry.cpp
+            src/geometry/vessel_geometry.cpp
             src/acoustics/acoustics_problem.cpp
             src/acoustics/boundary_conditions.cpp
             src/acoustics/helmholtz_solver.cpp
