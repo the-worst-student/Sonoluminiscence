@@ -14,15 +14,20 @@ void RequireNode(const YAML::Node& node, const std::string& name) {
   }
 }
 
-template <typename T>
-T ReadScalar(const YAML::Node& node, const std::string& name) {
-  RequireNode(node, name);
-  try {
-    return node.as<T>();
-  } catch (const std::exception& error) {
-    throw std::runtime_error("Failed to parse YAML field '" + name +
-                             "': " + error.what());
-  }
+    template <typename T>
+    T ReadOptionalScalar(const YAML::Node& node,
+                         const std::string& name,
+                         const T& default_value) {
+    if (!node) {
+        return default_value;
+    }
+
+    try {
+        return node.as<T>();
+    } catch (const std::exception& error) {
+        throw std::runtime_error("Failed to parse YAML field '" + name +
+                                 "': " + error.what());
+    }
 }
 
 }  // namespace
@@ -52,12 +57,44 @@ ProjectConfig YamlReader::ReadProjectConfig(const std::string& file_path) {
 
   const YAML::Node vessel = geometry["vessel"];
   RequireNode(vessel, "geometry.vessel");
-  config.geometry.vessel.type =
+    config.geometry.vessel.type =
       ReadScalar<std::string>(vessel["type"], "geometry.vessel.type");
-  config.geometry.vessel.radius_m =
-      ReadScalar<double>(vessel["radius_m"], "geometry.vessel.radius_m");
-  config.geometry.vessel.height_m =
-      ReadScalar<double>(vessel["height_m"], "geometry.vessel.height_m");
+
+    config.geometry.vessel.radius_m =
+        ReadScalar<double>(vessel["radius_m"], "geometry.vessel.radius_m");
+
+    config.geometry.vessel.height_m =
+        ReadScalar<double>(vessel["height_m"], "geometry.vessel.height_m");
+
+    config.geometry.vessel.bottom_radius_m =
+        ReadOptionalScalar<double>(
+            vessel["bottom_radius_m"],
+            "geometry.vessel.bottom_radius_m",
+            config.geometry.vessel.radius_m);
+
+    config.geometry.vessel.top_radius_m =
+        ReadOptionalScalar<double>(
+            vessel["top_radius_m"],
+            "geometry.vessel.top_radius_m",
+            config.geometry.vessel.radius_m);
+
+    config.geometry.vessel.bulge_m =
+        ReadOptionalScalar<double>(
+            vessel["bulge_m"],
+            "geometry.vessel.bulge_m",
+            0.0);
+
+    config.geometry.vessel.neck_m =
+        ReadOptionalScalar<double>(
+            vessel["neck_m"],
+            "geometry.vessel.neck_m",
+            0.0);
+
+    config.geometry.vessel.profile_points =
+        ReadOptionalScalar<int>(
+            vessel["profile_points"],
+            "geometry.vessel.profile_points",
+            40);
 
   const YAML::Node reflector = geometry["reflector"];
   RequireNode(reflector, "geometry.reflector");
